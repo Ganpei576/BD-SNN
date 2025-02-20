@@ -47,6 +47,9 @@ class mem_update(nn.Module):
         super(mem_update, self).__init__()
         self.actFun = nn.SiLU()
         self.act = act
+        
+        # 将alpha定义为可训练的参数，初始值可以设置为某个合适的值（比如0.5）
+        self.alpha = nn.Parameter(torch.tensor(0.5))  # alpha 是可训练参数
 
     def forward(self, x):
         mem = torch.zeros_like(x[0]).to(x.device)  # 膜电位初始值
@@ -57,18 +60,21 @@ class mem_update(nn.Module):
         for i in range(time_window):
             if i >= 1:
                 mem = mem_old * decay + x[i] # 更新膜电位，包含衰减项
-                dynamic_thresh = theta_0 - alpha * torch.tanh((torch.abs(mem - mem_old) / dt) - 1.5)
+                dynamic_thresh = theta_0 - self.alpha * torch.tanh((torch.abs(mem - mem_old) / dt) - 1.5)  # 使用可训练参数alpha
             else:
                 mem = x[i]
                 dynamic_thresh = torch.tensor(thresh, dtype=x.dtype, device=x.device)  # 初始化时使用默认阈值
+
             # 选择是否使用 SiLU 激活函数或自定义的阈值激活函数
             if self.act:
                 spike = self.actFun(mem)
             else:
                 spike = spike_activation(mem, dynamic_thresh)  # 使用动态阈值的激活函数
+
             mem = mem * (1 - spike.detach())
             mem_old = mem.clone()  # 保存当前膜电位以备下一时间步使用
             output[i] = spike  # 保存当前时间步的脉冲输出
+            
         return output
 
 class Snn_Conv2d(nn.Conv2d):
