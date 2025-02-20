@@ -48,8 +48,7 @@ class mem_update(nn.Module):
         self.actFun = nn.SiLU()
         self.act = act
         
-        # 将alpha定义为可训练的参数，初始值可以设置为某个合适的值（比如0.5）
-        self.alpha = nn.Parameter(torch.tensor(0.5))  # alpha 是可训练参数
+        self.alpha = nn.Parameter(torch.tensor(1.0))
 
     def forward(self, x):
         mem = torch.zeros_like(x[0]).to(x.device)  # 膜电位初始值
@@ -60,7 +59,7 @@ class mem_update(nn.Module):
         for i in range(time_window):
             if i >= 1:
                 mem = mem_old * decay + x[i] # 更新膜电位，包含衰减项
-                dynamic_thresh = theta_0 - self.alpha * torch.tanh((torch.abs(mem - mem_old) / dt) - 1.5)  # 使用可训练参数alpha
+                dynamic_thresh = theta_0 - self.alpha * torch.tanh((torch.abs(mem - mem_old) / dt) - 1.5)
             else:
                 mem = x[i]
                 dynamic_thresh = torch.tensor(thresh, dtype=x.dtype, device=x.device)  # 初始化时使用默认阈值
