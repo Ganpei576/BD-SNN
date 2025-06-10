@@ -36,44 +36,45 @@ def autopad(k, p=None):  # kernel, padding
         p = k // 2 if isinstance(k, int) else [x // 2 for x in k]  # auto-pad
     return p
 
-def spike_activation(x,dynamic_thresh):
-    out_s = torch.sign(x)
-    out_s[torch.abs(x) < dynamic_thresh] = torch.tensor(0.)
-    out_bp = torch.clamp(x, -1, 1)  #稳定使梯度可反向传播的范围在-1到1之间
-    return (out_s.float() - out_bp).detach() + out_bp
+def spike_activation(x, dynamic_thresh, lens=1.0):
+    # 前向脉冲发放（双向）
+    pos_mask = (x > dynamic_thresh).float()
+    neg_mask = (x < -dynamic_thresh).float()
+    spike = pos_mask - neg_mask  # +1 / 0 / -1
+
+    # 梯度只在 ±dynamic_thresh ± lens 范围内为 1
+    surrogate_grad = torch.clamp(x, -dynamic_thresh - lens, -dynamic_thresh + lens) + torch.clamp(x, dynamic_thresh - lens, dynamic_thresh + lens)
+
+    return (spike - surrogate_grad).detach() + surrogate_grad
 
 class mem_update(nn.Module):
     def __init__(self, act=False):
         super(mem_update, self).__init__()
         self.actFun = nn.SiLU()
         self.act = act
-        
-        self.alpha = nn.Parameter(torch.tensor(1.0))
+        self.alpha = nn.Parameter(torch.tensor(alpha))
 
     def forward(self, x):
-        mem = torch.zeros_like(x[0]).to(x.device)  # 膜电位初始值
-        spike = torch.zeros_like(x[0]).to(x.device)  # 脉冲发放初始化
-        output = torch.zeros_like(x)  # 用于保存每一时刻的输出
-        mem_old = torch.zeros_like(mem)  # 保存上一时间步的膜电位
+        mem = torch.zeros_like(x[0]).to(x.device)
+        spike = torch.zeros_like(x[0]).to(x.device)
+        output = torch.zeros_like(x)
+        mem_old = torch.zeros_like(mem)
 
         for i in range(time_window):
             if i >= 1:
-                mem = mem_old * decay + x[i] # 更新膜电位，包含衰减项
+                mem = mem_old * decay + x[i]
                 dynamic_thresh = theta_0 - self.alpha * torch.tanh((torch.abs(mem - mem_old) / dt) - 1.5)
             else:
                 mem = x[i]
-                dynamic_thresh = torch.tensor(thresh, dtype=x.dtype, device=x.device)  # 初始化时使用默认阈值
-
+                dynamic_thresh = theta_0 - self.alpha * torch.tanh(torch.tensor(0 / dt) - 1.5)
             # 选择是否使用 SiLU 激活函数或自定义的阈值激活函数
             if self.act:
                 spike = self.actFun(mem)
             else:
-                spike = spike_activation(mem, dynamic_thresh)  # 使用动态阈值的激活函数
-
+                spike = spike_activation(mem, dynamic_thresh)
             mem = mem * (1 - spike.detach())
-            mem_old = mem.clone()  # 保存当前膜电位以备下一时间步使用
-            output[i] = spike  # 保存当前时间步的脉冲输出
-            
+            mem_old = mem.clone()
+            output[i] = spike
         return output
 
 class Snn_Conv2d(nn.Conv2d):
