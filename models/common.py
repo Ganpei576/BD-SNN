@@ -270,20 +270,6 @@ class Concat(nn.Module):
     def forward(self, x):
         return torch.cat(x, self.d)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class Detections:
     #  detections class for inference results
     def __init__(self, imgs, pred, files, times=None, names=None, shape=None):
