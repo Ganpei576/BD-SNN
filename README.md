@@ -1,4 +1,4 @@
-# Bidirectional Dynamic Threshold SNN for Enhanced Object Detection with Rich Pulse Information (The Visual Computer 2025)
+# Bidirectional Dynamic Threshold SNN for Enhanced Object Detection with Rich Pulse Information
 
 Shaoxing Wu, Yufei Zhao, Ya Zhou, Qingzhu Meng, Yizhao Liao, Yiqian Huang, Zhu Yuan, Shuqi Liu and Yong Song
 
@@ -7,11 +7,6 @@ School of Optics and Photonics, Beijing Institute of Technology, Beijing
 Beijing Institute of Automation and Control Equipment, Beijing
 
 ---
-
-:rocket:  :rocket:  :rocket: **News**:
-
-- **February. 19, 2025**: Upload code.
-- **March. 25, 2025**: Sent for review.
 
 
 
