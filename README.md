@@ -1,4 +1,4 @@
-# Bidirectional Dynamic Threshold SNN for Enhanced Object Detection with Rich Pulse Information
+# Enhanced Object Detection with Rich Pulse Information via Bidirectional Dynamic Threshold SNN
 
 Shaoxing Wu, Yufei Zhao, Ya Zhou, Qingzhu Meng, Yizhao Liao, Shuqi Liu, Zhu Yuan, Yiqian Huang and Yong Song
 
